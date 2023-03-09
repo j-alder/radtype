@@ -5,3 +5,7 @@ Secondly, I have to guard the modifier/hot keys to make sure she doesn't cause s
 letter to my boss in Slack.
 
 Enter 🤙 **radtype** 🤙 - a fun, silly "game" where all keyboard input affects the screen in unpredictable ways.
+
+P.S.
+
+Yes, this is also an excuse to try out Rust.
