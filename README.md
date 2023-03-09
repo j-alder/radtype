@@ -1,5 +1,4 @@
 # radtype
-Fun (rad) typing game for a 2 year old
 
 My daughter loves to type on my keyboard(s), but the output of a text editor is not much fun for a small child. 
 Secondly, I have to guard the modifier/hot keys to make sure she doesn't cause some system issue or send a love 
