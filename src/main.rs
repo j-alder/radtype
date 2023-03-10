@@ -1,45 +1,49 @@
-use opengl_graphics::{OpenGL, GlGraphics};
-use piston::{WindowSettings, RenderEvent, Button, PressEvent, UpdateEvent};
-use piston::event_loop::{EventSettings, Events};
-use glutin_window::GlutinWindow as Window;
+use piston::{WindowSettings, Position};
+use piston_window::{PistonWindow, G2d, Context, Glyphs, types::Color, text, clear, Transformed};
 
-
-const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
-const WHITE: [f32; 4] = [1.0; 4];
+fn draw_text(
+    ctx: &Context,
+    graphics: &mut G2d,
+    glyphs: &mut Glyphs,
+    color: Color,
+    pos: Position,
+    text: &str,
+) {
+    text::Text::new_color(color, 32)
+        .draw(
+            text, 
+            glyphs, 
+            &ctx.draw_state, 
+            ctx.transform.trans(pos.x as f64, pos.y as f64), 
+            graphics
+        )
+        .unwrap()
+}
 
 fn main() {
-    let opengl = OpenGL::V3_2;
-
-    let mut window: Window = WindowSettings::new("radtype", [200, 200])
+    let mut window: PistonWindow = WindowSettings::new(
+        "radical typing simulator", 
+        [1000.0, 1000.0]
+    )
         .exit_on_esc(true)
-        .graphics_api(opengl)
         .build()
         .unwrap();
 
-    let mut gl = GlGraphics::new(opengl);
+    let assets = find_folder::Search::ParentsThenKids(0, 0)
+        .for_folder("assets")
+        .unwrap();
 
-    let mut events = Events::new(EventSettings::new());
-    while let Some(e) = events.next(&mut window) {
-        if let Some(args) = e.render_args() {
-            let (x, y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
+    let font = assets.join("FiraCode-Regular.ttf");
 
-            gl.draw(args.viewport(), |ctx, gl| {
-                graphics::clear(WHITE, gl);
-                graphics::ellipse(
-                    GREEN, 
-                    graphics::ellipse::circle(x, y, 5.0),
-                    ctx.transform,
-                    gl
-                );
-            })
-        }
+    let mut glyphs = window
+        .load_font(font)
+        .unwrap();
 
-        if let Some(Button::Keyboard(key)) = e.press_args() {
-            println!("Pressed key '{:?}'", key)
-        }
-
-        if let Some(_args) = e.update_args() {
-            // create letter borders here
-        }
+    while let Some(e) = window.next() {
+        window.draw_2d(&e, |ctx, g, d| {
+            clear([1.0; 4], g);
+            draw_text(&ctx, g, &mut glyphs, [0.0, 0.0, 0.0, 1.0], Position { x: 0, y: 500 }, "Hello World");
+            glyphs.factory.encoder.flush(d)
+        });
     }
 }
