@@ -7,7 +7,6 @@ edition = "2021"
 name = "radtype"
 
 [dependencies]
-ferris-says = "0.2"
 piston = "0.53.0"
 piston2d-graphics = "0.43.0"
 pistoncore-glutin_window = "0.71.0"
