@@ -1,72 +1,45 @@
-extern crate glutin_window;
-extern crate graphics;
-extern crate opengl_graphics;
-extern crate piston;
-
-use glutin_window::GlutinWindow as Window;
-use opengl_graphics::{GlGraphics, OpenGL};
+use opengl_graphics::{OpenGL, GlGraphics};
+use piston::{WindowSettings, RenderEvent, Button, PressEvent, UpdateEvent};
 use piston::event_loop::{EventSettings, Events};
-use piston::input::{RenderArgs, RenderEvent, UpdateArgs, UpdateEvent};
-use piston::window::WindowSettings;
+use glutin_window::GlutinWindow as Window;
 
-pub struct App {
-    gl: GlGraphics,
-    rotation: f64,
-}
 
-impl App {
-    fn render(&mut self, args: &RenderArgs){
-        use graphics::*;
-
-        const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
-        const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
-
-        let square = rectangle::square(0.0, 0.0, 50.0);
-        let rotation = self.rotation;
-        let (x, y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
-
-        self.gl.draw(args.viewport(), |c, gl| {
-            clear(GREEN, gl);
-            let transform = c
-                .transform
-                .trans(x, y)
-                .rot_rad(rotation)
-                .trans(-25.0, -25.0);
-
-            rectangle(RED, square, transform, gl);
-        });
-    }
-
-    fn update(&mut self, args: &UpdateArgs) {
-        self.rotation += 2.0 * args.dt;
-    }
-}
+const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
+const WHITE: [f32; 4] = [1.0; 4];
 
 fn main() {
-    // Change this to OpenGL::V2_1 if not working.
     let opengl = OpenGL::V3_2;
 
-    // Create a Glutin window.
-    let mut window: Window = WindowSettings::new("spinning-square", [200, 200])
-        .graphics_api(opengl)
+    let mut window: Window = WindowSettings::new("radtype", [200, 200])
         .exit_on_esc(true)
+        .graphics_api(opengl)
         .build()
         .unwrap();
 
-    // Create a new game and run it.
-    let mut app = App {
-        gl: GlGraphics::new(opengl),
-        rotation: 0.0,
-    };
+    let mut gl = GlGraphics::new(opengl);
 
     let mut events = Events::new(EventSettings::new());
     while let Some(e) = events.next(&mut window) {
         if let Some(args) = e.render_args() {
-            app.render(&args);
+            let (x, y) = (args.window_size[0] / 2.0, args.window_size[1] / 2.0);
+
+            gl.draw(args.viewport(), |ctx, gl| {
+                graphics::clear(WHITE, gl);
+                graphics::ellipse(
+                    GREEN, 
+                    graphics::ellipse::circle(x, y, 5.0),
+                    ctx.transform,
+                    gl
+                );
+            })
         }
 
-        if let Some(args) = e.update_args() {
-            app.update(&args);
+        if let Some(Button::Keyboard(key)) = e.press_args() {
+            println!("Pressed key '{:?}'", key)
+        }
+
+        if let Some(_args) = e.update_args() {
+            // create letter borders here
         }
     }
 }
