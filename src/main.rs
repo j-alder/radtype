@@ -1,5 +1,5 @@
-use piston::{WindowSettings, Position};
-use piston_window::{PistonWindow, G2d, Context, Glyphs, types::Color, text, clear, Transformed};
+use piston::{WindowSettings, Position, Events, EventSettings, EventLoop, RenderEvent};
+use piston_window::{*, types::Color};
 
 fn draw_text(
     ctx: &Context,
@@ -39,11 +39,21 @@ fn main() {
         .load_font(font)
         .unwrap();
 
-    while let Some(e) = window.next() {
-        window.draw_2d(&e, |ctx, g, d| {
-            clear([1.0; 4], g);
-            draw_text(&ctx, g, &mut glyphs, [0.0, 0.0, 0.0, 1.0], Position { x: 0, y: 500 }, "Hello World");
-            glyphs.factory.encoder.flush(d)
-        });
+
+    let mut events = Events::new(EventSettings::new()).lazy(true);
+
+    let mut display_text = String::from("Hello world!");
+
+    while let Some(e) = events.next(&mut window) {
+        if let Some(_args) = e.render_args() {
+            window.draw_2d(&e, |ctx, g, d| {
+                clear([1.0; 4], g);
+                draw_text(&ctx, g, &mut glyphs, [0.0, 0.0, 0.0, 1.0], Position { x: 0, y: 500 }, &display_text.as_str());
+                glyphs.factory.encoder.flush(d)
+            });
+        }
+        if let Some(Button::Keyboard(key)) = e.press_args() {
+            display_text = key.code().to_string();
+        }
     }
 }
