@@ -1,5 +1,7 @@
-use piston::{WindowSettings, Position, Events, EventSettings, EventLoop, RenderEvent};
-use piston_window::{*, types::Color};
+use std::collections::HashMap;
+
+use piston::{WindowSettings, Position, Events, EventSettings, RenderEvent};
+use piston_window::{*, types::Color, rectangle::square};
 
 fn key_to_string(k: Key, fallback: &str) -> &str {
     match k.code(){
@@ -33,6 +35,38 @@ fn key_to_string(k: Key, fallback: &str) -> &str {
     }
 }
 
+fn key_to_color(k: Key) -> Color {
+    match k.code() {
+        0x61=>[0.1, 1.0, 0.0, 1.0],
+        0x62=>[0.2, 0.9, 0.1, 1.0],
+        0x63=>[0.3, 0.8, 0.0, 1.0],
+        0x64=>[0.4, 0.7, 0.2, 1.0],
+        0x65=>[0.5, 0.6, 0.0, 1.0],
+        0x66=>[0.6, 0.5, 0.3, 1.0],
+        0x67=>[0.7, 0.4, 0.0, 1.0],
+        0x68=>[0.8, 0.3, 0.4, 1.0],
+        0x69=>[0.9, 0.2, 0.0, 1.0],
+        0x6A=>[1.0, 0.1, 0.5, 1.0],
+        0x6B=>[0.1, 0.0, 0.0, 1.0],
+        0x6C=>[0.2, 1.0, 0.6, 1.0],
+        0x6D=>[0.3, 0.9, 0.0, 1.0],
+        0x6E=>[0.4, 0.8, 0.7, 1.0],
+        0x6F=>[0.5, 0.7, 0.0, 1.0],
+        0x70=>[0.6, 0.6, 0.8, 1.0],
+        0x71=>[0.7, 0.5, 0.0, 1.0],
+        0x72=>[0.8, 0.4, 0.9, 1.0],
+        0x73=>[0.9, 0.3, 0.0, 1.0],
+        0x74=>[1.0, 0.2, 1.0, 1.0],
+        0x75=>[0.1, 0.1, 0.0, 1.0],
+        0x76=>[0.2, 0.0, 0.1, 1.0],
+        0x77=>[0.3, 1.0, 0.0, 1.0],
+        0x78=>[0.4, 0.9, 0.2, 1.0],
+        0x79=>[0.5, 0.8, 0.0, 1.0],
+        0x7A=>[0.6, 0.7, 0.3, 1.0],
+        _=>[0.0, 0.0, 0.0, 0.0]
+    }
+}
+
 fn draw_text(
     ctx: &Context,
     graphics: &mut G2d,
@@ -52,46 +86,100 @@ fn draw_text(
         .unwrap()
 }
 
+struct ColoredSquare {
+    color: Color,
+    size: f64,
+}
+
+struct Game {
+    window: PistonWindow,
+    glyphs: Glyphs,
+    text: String,
+    shapes: HashMap<String, ColoredSquare>
+}
+
+impl Game {
+    pub fn default() -> Self {
+        let mut window: PistonWindow = WindowSettings::new(
+            "radical typing simulator",
+            [1000.0, 1000.0]
+        ).exit_on_esc(true).build().unwrap();
+        let assets = find_folder::Search::ParentsThenKids(0, 0)
+            .for_folder("assets")
+            .unwrap();
+
+        let font = assets.join("FiraCode-Regular.ttf");
+
+        let glyphs = window
+            .load_font(font)
+            .unwrap();
+        
+        Game { 
+            window, 
+            glyphs, 
+            text: String::from(""),
+            shapes: HashMap::new(),
+        }
+    }
+
+    fn render(&mut self, e: &Event) {
+        self.window.draw_2d(e, |ctx, g, d| {
+            clear([1.0; 4], g);
+            draw_text(
+                &ctx, 
+                g, 
+                &mut self.glyphs, 
+                [0.0, 0.0, 0.0, 1.0], 
+                Position { x: 500, y: 500 }, 
+                self.text.as_str());
+            self.glyphs.factory.encoder.flush(d);
+            for shape in &self.shapes {
+                rectangle(
+                    shape.1.color, 
+                    square(
+                        500.0 - shape.1.size / 2.0, 
+                        500.0 - shape.1.size / 2.0, 
+                        shape.1.size
+                    ), 
+                    ctx.transform,
+                    g
+                )
+            }
+        });
+    }
+
+    fn update_text(&mut self, key: Key) {
+        let t = self.text.clone();
+        self.text = String::from(key_to_string(key, &self.text));
+        if t != self.text {
+            self.shapes.insert(
+                self.text.clone(),
+                ColoredSquare { color: key_to_color(key), size: 20.0 }
+            );
+        }
+    }
+
+    fn update_square_sizes(&mut self) {
+        for shape in &mut self.shapes {
+            shape.1.size += 2.0
+        }
+    }
+}
+
 fn main() {
-    let mut window: PistonWindow = WindowSettings::new(
-        "radical typing simulator", 
-        [1000.0, 1000.0]
-    )
-        .exit_on_esc(true)
-        .build()
-        .unwrap();
+    let mut game = Game::default();
 
-    let assets = find_folder::Search::ParentsThenKids(0, 0)
-        .for_folder("assets")
-        .unwrap();
+    let mut events = Events::new(EventSettings::new());
 
-    let font = assets.join("FiraCode-Regular.ttf");
-
-    let mut glyphs = window
-        .load_font(font)
-        .unwrap();
-
-
-    let mut events = Events::new(EventSettings::new()).lazy(true);
-
-    let mut display_text = "";
-
-    while let Some(e) = events.next(&mut window) {
+    while let Some(e) = events.next(&mut game.window) {
         if let Some(_args) = e.render_args() {
-            window.draw_2d(&e, |ctx, g, d| {
-                clear([1.0; 4], g);
-                draw_text(
-                    &ctx, 
-                    g, 
-                    &mut glyphs, 
-                    [0.0, 0.0, 0.0, 1.0], 
-                    Position { x: 500, y: 500 }, 
-                    display_text);
-                glyphs.factory.encoder.flush(d)
-            });
+            game.render(&e);
         }
         if let Some(Button::Keyboard(key)) = e.press_args() {
-            display_text = key_to_string(key, &display_text);
+            game.update_text(key);
+        }
+        if let Some(_args) = e.update_args() {
+            game.update_square_sizes()
         }
     }
 }
