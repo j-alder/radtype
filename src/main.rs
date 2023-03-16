@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use piston::{WindowSettings, Position, Events, EventSettings, RenderEvent};
 use piston_window::{*, types::Color, rectangle::square};
 
@@ -91,18 +89,28 @@ struct ColoredSquare {
     size: f64,
 }
 
+impl ColoredSquare {
+    fn default() -> Self {
+        ColoredSquare { color: [1.0; 4], size: 0.0 }
+    }
+}
+
 struct Game {
     window: PistonWindow,
     glyphs: Glyphs,
     text: String,
-    shapes: HashMap<String, ColoredSquare>
+    shapes: Vec<ColoredSquare>,
+    background_color: Color,
 }
 
+const WINDOW_HEIGHT: f64 = 1000.0;
+const WINDOW_WIDTH: f64 = 1000.0;
+
 impl Game {
-    pub fn default() -> Self {
+    fn default() -> Self {
         let mut window: PistonWindow = WindowSettings::new(
             "radical typing simulator",
-            [1000.0, 1000.0]
+            [WINDOW_WIDTH, WINDOW_HEIGHT]
         ).exit_on_esc(true).build().unwrap();
         let assets = find_folder::Search::ParentsThenKids(0, 0)
             .for_folder("assets")
@@ -118,33 +126,40 @@ impl Game {
             window, 
             glyphs, 
             text: String::from(""),
-            shapes: HashMap::new(),
+            shapes: Vec::new(),
+            background_color: [1.0; 4]
         }
     }
 
     fn render(&mut self, e: &Event) {
         self.window.draw_2d(e, |ctx, g, d| {
-            clear([1.0; 4], g);
+            let mut s: Option<ColoredSquare> = None;
+            while self.shapes.len() > 0 && self.shapes[0].size >= WINDOW_HEIGHT {
+                s = self.shapes.pop();
+                self.background_color = s.unwrap_or(ColoredSquare::default()).color
+            }
+            for shape in &self.shapes {
+                rectangle(
+                    shape.color, 
+                    square(
+                        (WINDOW_WIDTH / 2.0) - (shape.size / 2.0),
+                        (WINDOW_HEIGHT / 2.0) - (shape.size / 2.0),
+                        shape.size
+                    ), 
+                    ctx.transform,
+                    g
+                )
+            }
+            clear(self.background_color, g);
             draw_text(
                 &ctx, 
                 g, 
                 &mut self.glyphs, 
                 [0.0, 0.0, 0.0, 1.0], 
                 Position { x: 500, y: 500 }, 
-                self.text.as_str());
+                self.text.as_str()
+            );
             self.glyphs.factory.encoder.flush(d);
-            for shape in &self.shapes {
-                rectangle(
-                    shape.1.color, 
-                    square(
-                        500.0 - shape.1.size / 2.0, 
-                        500.0 - shape.1.size / 2.0, 
-                        shape.1.size
-                    ), 
-                    ctx.transform,
-                    g
-                )
-            }
         });
     }
 
@@ -152,16 +167,13 @@ impl Game {
         let t = self.text.clone();
         self.text = String::from(key_to_string(key, &self.text));
         if t != self.text {
-            self.shapes.insert(
-                self.text.clone(),
-                ColoredSquare { color: key_to_color(key), size: 20.0 }
-            );
+            self.shapes.push(ColoredSquare { color: key_to_color(key), size: 20.0 });
         }
     }
 
     fn update_square_sizes(&mut self) {
         for shape in &mut self.shapes {
-            shape.1.size += 2.0
+            shape.size += 2.0
         }
     }
 }
