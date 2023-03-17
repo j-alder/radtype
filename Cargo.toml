@@ -10,4 +10,5 @@ name = "radtype"
 piston = "0.53.0"
 piston_window = "0.128.0"
 find_folder = "0.3.0"
+rand = "0.8.5"
 
