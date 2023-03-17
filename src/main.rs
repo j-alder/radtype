@@ -1,5 +1,11 @@
 use piston::{WindowSettings, Position, Events, EventSettings, RenderEvent};
 use piston_window::{*, types::Color, rectangle::square};
+use rand::Rng;
+
+fn rand_color() -> Color {
+    let mut rng = rand::thread_rng();
+    [rng.gen(), rng.gen(), rng.gen(), 1.0]
+}
 
 fn key_to_string(k: Key, fallback: &str) -> &str {
     match k.code(){
@@ -30,38 +36,6 @@ fn key_to_string(k: Key, fallback: &str) -> &str {
         0x79=>"Y",
         0x7A=>"Z",
         _=>fallback
-    }
-}
-
-fn key_to_color(k: Key) -> Color {
-    match k.code() {
-        0x61=>[0.1, 1.0, 0.0, 1.0],
-        0x62=>[0.2, 0.9, 0.1, 1.0],
-        0x63=>[0.3, 0.8, 0.0, 1.0],
-        0x64=>[0.4, 0.7, 0.2, 1.0],
-        0x65=>[0.5, 0.6, 0.0, 1.0],
-        0x66=>[0.6, 0.5, 0.3, 1.0],
-        0x67=>[0.7, 0.4, 0.0, 1.0],
-        0x68=>[0.8, 0.3, 0.4, 1.0],
-        0x69=>[0.9, 0.2, 0.0, 1.0],
-        0x6A=>[1.0, 0.1, 0.5, 1.0],
-        0x6B=>[0.1, 0.0, 0.0, 1.0],
-        0x6C=>[0.2, 1.0, 0.6, 1.0],
-        0x6D=>[0.3, 0.9, 0.0, 1.0],
-        0x6E=>[0.4, 0.8, 0.7, 1.0],
-        0x6F=>[0.5, 0.7, 0.0, 1.0],
-        0x70=>[0.6, 0.6, 0.8, 1.0],
-        0x71=>[0.7, 0.5, 0.0, 1.0],
-        0x72=>[0.8, 0.4, 0.9, 1.0],
-        0x73=>[0.9, 0.3, 0.0, 1.0],
-        0x74=>[1.0, 0.2, 1.0, 1.0],
-        0x75=>[0.1, 0.1, 0.0, 1.0],
-        0x76=>[0.2, 0.0, 0.1, 1.0],
-        0x77=>[0.3, 1.0, 0.0, 1.0],
-        0x78=>[0.4, 0.9, 0.2, 1.0],
-        0x79=>[0.5, 0.8, 0.0, 1.0],
-        0x7A=>[0.6, 0.7, 0.3, 1.0],
-        _=>[0.0, 0.0, 0.0, 0.0]
     }
 }
 
@@ -103,15 +77,15 @@ struct Game {
     background_color: Color,
 }
 
-const WINDOW_HEIGHT: f64 = 1000.0;
-const WINDOW_WIDTH: f64 = 1000.0;
-
 impl Game {
     fn default() -> Self {
         let mut window: PistonWindow = WindowSettings::new(
             "radical typing simulator",
-            [WINDOW_WIDTH, WINDOW_HEIGHT]
-        ).exit_on_esc(true).build().unwrap();
+            [1000.0, 1000.0]
+        )
+            .exit_on_esc(true)
+            .build()
+            .unwrap();
         let assets = find_folder::Search::ParentsThenKids(0, 0)
             .for_folder("assets")
             .unwrap();
@@ -131,19 +105,19 @@ impl Game {
         }
     }
 
-    fn render(&mut self, e: &Event) {
+    fn render(&mut self, e: &Event, args: &RenderArgs) {
         self.window.draw_2d(e, |ctx, g, d| {
-            let mut s: Option<ColoredSquare> = None;
-            while self.shapes.len() > 0 && self.shapes[0].size >= WINDOW_HEIGHT {
-                s = self.shapes.pop();
-                self.background_color = s.unwrap_or(ColoredSquare::default()).color
+            while self.shapes.len() > 0 && self.shapes[0].size >= args.window_size[0] {
+                self.background_color = self.shapes.pop()
+                    .unwrap_or(ColoredSquare::default())
+                    .color
             }
             for shape in &self.shapes {
                 rectangle(
                     shape.color, 
                     square(
-                        (WINDOW_WIDTH / 2.0) - (shape.size / 2.0),
-                        (WINDOW_HEIGHT / 2.0) - (shape.size / 2.0),
+                        (args.window_size[0] / 2.0) - (shape.size / 2.0),
+                        (args.window_size[1] / 2.0) - (shape.size / 2.0),
                         shape.size
                     ), 
                     ctx.transform,
@@ -167,7 +141,7 @@ impl Game {
         let t = self.text.clone();
         self.text = String::from(key_to_string(key, &self.text));
         if t != self.text {
-            self.shapes.push(ColoredSquare { color: key_to_color(key), size: 20.0 });
+            self.shapes.push(ColoredSquare { color: rand_color(), size: 20.0 });
         }
     }
 
@@ -184,8 +158,8 @@ fn main() {
     let mut events = Events::new(EventSettings::new());
 
     while let Some(e) = events.next(&mut game.window) {
-        if let Some(_args) = e.render_args() {
-            game.render(&e);
+        if let Some(args) = e.render_args() {
+            game.render(&e, &args);
         }
         if let Some(Button::Keyboard(key)) = e.press_args() {
             game.update_text(key);
