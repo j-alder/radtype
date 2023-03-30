@@ -1,12 +1,6 @@
 use rand::Rng;
 use bevy::{prelude::*, input::keyboard::KeyboardInput};
 
-#[derive(Resource)]
-struct ScaleTimer(Timer);
-
-#[derive(Component)]
-struct AnimateScale;
-
 #[derive(Component)]
 struct ColorText;
 
@@ -15,22 +9,19 @@ pub struct TextPlugin;
 impl Plugin for TextPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_startup_system(configure_camera)
+            .add_startup_system(startup_text)
             .add_event::<KeyboardInput>()
             .add_systems((
                 key_press_event, 
-                animate_scale,
                 text_color_system
             ));
     }
 }
 
-fn configure_camera(
+fn startup_text(
     mut commands: Commands, 
     asset_server: Res<AssetServer>
 ) {
-    /* create a 2d camera */
-    commands.spawn(Camera2dBundle::default());
     commands.spawn((
         Text2dBundle { 
             text: Text::from_section(
@@ -47,25 +38,12 @@ fn configure_camera(
     ));
 }
 
-fn text_color_system(time: Res<Time>, mut query: Query<&mut Text, With<ColorText>>) {
-    for mut text in &mut query {
-        let seconds = time.elapsed_seconds();
-
-        text.sections[0].style.color = Color::Rgba {
-            red: (1.25 * seconds).sin() / 2.0 + 0.5,
-            green: (0.75 * seconds).sin() / 2.0 + 0.5,
-            blue: (0.50 * seconds).sin() / 2.0 + 0.5,
-            alpha: 1.0,
-        };
-    }
-}
-
-fn animate_scale(
-    time: Res<Time>,
-    mut query: Query<&mut Transform, (With<Text>, With<AnimateScale>)>,
+fn text_color_system(
+    time: Res<Time>, 
+    mut query: Query<&mut Text, With<ColorText>>
 ) {
-    for mut transform in &mut query {
-        transform.scale = Vec3::splat(transform.scale.x + time.delta_seconds() * 5.0);
+    for mut text in &mut query {
+        text.sections[0].style.color = color_from_seconds(time.elapsed_seconds());
     }
 }
 
@@ -79,16 +57,25 @@ fn key_press_event(
         match ev.state {
             ButtonState::Pressed => {
                 for mut text in &mut query {
-                    text.sections[0].value = String::from(
-                        key_code_to_str(
-                            ev.key_code, 
-                            text.sections[0].value.as_str()
-                        )
+                    let s = text.sections[0].value.clone();
+                    let c = key_code_to_str(
+                        ev.key_code, 
+                        s.as_str()
                     );
+                    text.sections[0].value = String::from(c);
                 }
             }
             ButtonState::Released => {}
         }
+    }
+}
+
+fn color_from_seconds(seconds: f32) -> Color {
+    Color::Rgba { 
+        red: (1.25 * seconds).sin() / 2.0 + 0.5,
+        green: (0.75 * seconds).sin() / 2.0 + 0.5,
+        blue: (0.50 * seconds).sin() / 2.0 + 0.5,
+        alpha: 1.0,
     }
 }
 
