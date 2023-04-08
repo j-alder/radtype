@@ -1,6 +1,5 @@
 mod text;
 mod gabe;
-mod skeleton;
 
 use bevy::{prelude::*, DefaultPlugins};
 use gabe::GabePlugin;
