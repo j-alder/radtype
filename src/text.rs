@@ -84,7 +84,7 @@ fn rand_color() -> Color {
     Color::rgb(rng.gen(), rng.gen(), rng.gen())
 }
 
-fn key_code_to_str(k: Option<KeyCode>, f: &str) -> &str {
+pub fn key_code_to_str(k: Option<KeyCode>, f: &str) -> &str {
     match k.unwrap_or(KeyCode::F24) {
         KeyCode::A=>"A",
         KeyCode::B=>"B",
@@ -112,6 +112,38 @@ fn key_code_to_str(k: Option<KeyCode>, f: &str) -> &str {
         KeyCode::X=>"X",
         KeyCode::Y=>"Y",
         KeyCode::Z=>"Z",
+        _=>f
+    }
+}
+
+pub fn rand_key_code(f: KeyCode) -> KeyCode {
+    match rand::thread_rng().gen_range(1..26) {
+        1=>KeyCode::A,
+        2=>KeyCode::B,
+        3=>KeyCode::C,
+        4=>KeyCode::D,
+        5=>KeyCode::E,
+        6=>KeyCode::F,
+        7=>KeyCode::G,
+        8=>KeyCode::H,
+        9=>KeyCode::I,
+        10=>KeyCode::J,
+        11=>KeyCode::K,
+        12=>KeyCode::L,
+        13=>KeyCode::M,
+        14=>KeyCode::N,
+        15=>KeyCode::O,
+        16=>KeyCode::P,
+        17=>KeyCode::Q,
+        18=>KeyCode::R,
+        19=>KeyCode::S,
+        20=>KeyCode::T,
+        21=>KeyCode::U,
+        22=>KeyCode::V,
+        23=>KeyCode::W,
+        24=>KeyCode::X,
+        25=>KeyCode::Y,
+        26=>KeyCode::Z,
         _=>f
     }
 }
