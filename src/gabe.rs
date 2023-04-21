@@ -1,6 +1,9 @@
-use bevy::{prelude::*, input::{keyboard::KeyboardInput, ButtonState}};
+use bevy::{
+    input::{keyboard::KeyboardInput, ButtonState},
+    prelude::*,
+};
 
-use crate::text::{rand_key_code, key_code_to_str};
+use crate::text::{key_code_to_str, rand_key_code};
 
 #[derive(Component)]
 struct AnimateIdle;
@@ -14,18 +17,18 @@ struct AnimationIndices {
 #[derive(Component, PartialEq)]
 enum Direction {
     Left,
-    Right
+    Right,
 }
 
 #[derive(Component, PartialEq)]
 enum Velocity {
     Running,
-    Stopped
+    Stopped,
 }
 
 #[derive(Component)]
 struct LetterRequest {
-    letter: KeyCode
+    letter: KeyCode,
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -35,8 +38,7 @@ pub struct GabePlugin;
 
 impl Plugin for GabePlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_startup_system(setup)
+        app.add_startup_system(setup)
             .add_system(sprite_run_trigger)
             .add_system(sprite_run);
     }
@@ -50,10 +52,12 @@ fn sprite_run(
         &mut AnimationTimer,
         &mut TextureAtlasSprite,
         &mut Direction,
-        &mut Velocity
-    )>
+        &mut Velocity,
+    )>,
 ) {
-    for (mut indices, mut transform, mut timer, mut sprite, mut direction, mut velocity) in &mut query {
+    for (mut indices, mut transform, mut timer, mut sprite, mut direction, mut velocity) in
+        &mut query
+    {
         if *velocity == Velocity::Running {
             timer.tick(time.delta());
             if timer.just_finished() {
@@ -86,13 +90,13 @@ fn sprite_run(
 }
 
 fn sprite_run_trigger(
-    mut events: EventReader<KeyboardInput>, 
+    mut events: EventReader<KeyboardInput>,
     mut sprites: Query<(&mut Velocity, &mut AnimationIndices)>,
     mut letters: Query<(&mut LetterRequest, &mut Text)>,
 ) {
     for ev in events.iter() {
         match ev.state {
-            ButtonState::Pressed=>{
+            ButtonState::Pressed => {
                 for (mut letter_request, mut text) in &mut letters {
                     if ev.key_code == Some(letter_request.letter) {
                         for (mut velocity, mut indices) in &mut sprites {
@@ -100,14 +104,15 @@ fn sprite_run_trigger(
                                 *indices = AnimationIndices { first: 1, last: 6 };
                                 *velocity = Velocity::Running;
                                 let rkc = rand_key_code(letter_request.letter);
-                                text.sections[0].value = format!("press {}", key_code_to_str(Some(rkc), ""));
+                                text.sections[0].value =
+                                    format!("press {}", key_code_to_str(Some(rkc), ""));
                                 *letter_request = LetterRequest { letter: rkc };
                             }
                         }
                     }
                 }
             }
-            ButtonState::Released=>{}
+            ButtonState::Released => {}
         }
     }
 }
@@ -127,8 +132,12 @@ fn setup(
         SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
             sprite: TextureAtlasSprite::new(animation_indices.first),
-            transform: Transform { 
-                translation: Vec3 { x: -500., y: -250., z: 0. }, 
+            transform: Transform {
+                translation: Vec3 {
+                    x: -500.,
+                    y: -250.,
+                    z: 0.,
+                },
                 scale: Vec3::splat(6.0),
                 ..default()
             },
@@ -143,15 +152,20 @@ fn setup(
     commands.spawn((
         Text2dBundle {
             text: Text::from_section(
-                format!("press {}", key_code_to_str(Some(rkc), "A")), 
-                TextStyle { 
-                    font: asset_server.load("FiraCode-Regular.ttf"), 
-                    font_size: 100., 
-                    color: Color::BEIGE 
-                }),
-            transform: Transform::from_translation(Vec3 { x: -500., y: 300., z: 0. }),
+                format!("press {}", key_code_to_str(Some(rkc), "A")),
+                TextStyle {
+                    font: asset_server.load("FiraCode-Regular.ttf"),
+                    font_size: 100.,
+                    color: Color::BEIGE,
+                },
+            ),
+            transform: Transform::from_translation(Vec3 {
+                x: -500.,
+                y: 300.,
+                z: 0.,
+            }),
             ..default()
         },
-        LetterRequest { letter: rkc }
+        LetterRequest { letter: rkc },
     ));
 }
